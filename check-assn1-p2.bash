@@ -4,13 +4,21 @@
 
 # Author: Murray Saul
 # Created: February 17, 2017   Updated: October 12, 2018
-# Edited by: Peter Callaghan February 3, 2019
+# Edited by: Peter Callaghan July 1, 2019
 
 # Purpose: To generate data to be mailed to OPS335 instructor in order
 #          to mark second portion of OPS335 assignment #1 - Part 2
 
 # Error-checking prior to running shell script
 # Check that user is logged on as root
+
+primaryserver=wendys
+primaryaddress=172.21.5.2
+secondaryserver=harveys
+secondaryaddress=172.21.5.3
+tld=ops
+sld=fastfood
+bld=restaurant
 
 if [ `id -u` -ne 0 ]
 then
@@ -26,9 +34,9 @@ then
   exit 1
 fi
 
-if ! virsh list | egrep -iqs "(kidd|wint)"
+if ! virsh list | egrep -iqs "($secondaryserver|$primaryserver)"
 then
-  echo "You need to run your \"kidd\", and \"wint\" VMs" >&2
+  echo "You need to run your \"$secondaryserver\", and \"$primaryserver\" VMs" >&2
   exit 2
 fi
 
@@ -40,31 +48,31 @@ read -p "Please enter YOUR FULL NAME: " fullName
 
 read -p "Please enter YOUR SENECA LOGIN USERNAME: " userID
 
-profemail=""
-done=1
-while [ $done -ne 0 ]
-do
-	read -p "Enter your section:" section
-	case $section in
-		a|A)	profemail="chris.johnson@senecacollege.ca"
-			done=0
-			;;
-		b|B)
-			profemail="andres.lombo@senecacollege.ca"
-			done=0
-			;;
-		c|C)
-			profemail="peter.callaghan@senecacollege.ca"
-			done=0
-			;;
-		d|D)
-			profemail="ahad.mammadov@senecacollege.ca"
-			done=0
-			;;
-		*) echo "That is not a current section."
-			;;
-	esac
-done
+profemail="peter.callaghan@senecacollege.ca"
+#done=1
+#while [ $done -ne 0 ]
+#do
+#	read -p "Enter your section:" section
+#	case $section in
+#		a|A)	profemail="chris.johnson@senecacollege.ca"
+#			done=0
+#			;;
+#		b|B)
+#			profemail="andres.lombo@senecacollege.ca"
+#			done=0
+#			;;
+#		c|C)
+#			profemail="peter.callaghan@senecacollege.ca"
+#			done=0
+#			;;
+#		d|D)
+#			profemail="ahad.mammadov@senecacollege.ca"
+#			done=0
+#			;;
+#		*) echo "That is not a current section."
+#			;;
+#	esac
+#done
 
 # Generate Evaluation Report
 
@@ -72,7 +80,7 @@ clear
 echo "Your Assignment #1 - Part 2 is being evaluated..."
 echo "This make take a few minutes to complete..."
 
-cat <<'PPC' > /tmp/checkwint.bash
+cat <<'PPC' > /tmp/check$primaryserver.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -83,9 +91,9 @@ echo "SELinux status:"`getenforce`
 echo
 
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search bond\.villains\.ops" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -157,7 +165,7 @@ done
 echo SELIF ENOZ
 PPC
 
-cat <<'PPC' > /tmp/checkkidd.bash
+cat <<'PPC' > /tmp/check$secondaryserver.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -167,9 +175,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search bond\.villains\.ops" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -255,10 +263,8 @@ ls -l /var/named/slaves
 echo
 PPC
 
-address=172.19.1.2
-ssh $address 'bash ' < /tmp/checkwint.bash > /tmp/output-wint.txt 2>&1
-address=172.19.1.3
-ssh $address 'bash ' < /tmp/checkkidd.bash > /tmp/output-kidd.txt 2>&1
+ssh $primaryaddress 'bash ' < /tmp/check$primaryserver.bash > /tmp/output-$primaryserver.txt 2>&1
+ssh $secondaryaddress 'bash ' < /tmp/check$secondaryserver.bash > /tmp/output-$secondaryserver.txt 2>&1
 
 
 # Send report information to instructor
@@ -267,12 +273,9 @@ cat > message.txt <<+
 If you have received this e-mail message, then
 you have successfully submitted the remaining
 information for your OPS335 assignment 1 (part 2)
-
 +
 
-
-
-mail -s "OPS335-a1p2-$fullName" -a /tmp/output-wint.txt -a /tmp/output-kidd.txt $profemail < message.txt
+mail -s "OPS335-a1p2-$fullName" -a /tmp/output-$primaryserver.txt -a /tmp/output-$secondaryserver.txt $profemail < message.txt
 tries=0
 sent=0
 while [ $tries -lt 10 ]
@@ -290,13 +293,9 @@ done
 if [ $sent -gt 0 ]
 then
 	mail -s "OPS335-a1p2-confirmation" "$userID@myseneca.ca"  < message.txt
-cat <<+
-Submission of OPS335 assignment 1 (part 2) completed.
-A confirmation message should have been sent to your
-Seneca email account.
-+
+	cat message.txt
 else
 	echo "The email was not sent.  This script must be run on campus, or Seneca's email servers will not accept the email.  If you are on campus try again in a few minutes or ask your professor for help." >&2
 fi
 
-rm -f  /tmp/checkwint.bash /tmp/checkkidd.bash /tmp/output-wint.txt /tmp/output-kidd.txt message.txt 2> /dev/null
+rm -f  /tmp/check$primaryserver.bash /tmp/check$secondaryserver.bash /tmp/output-$primaryserver.txt /tmp/output-$secondaryserver.txt message.txt 2> /dev/null

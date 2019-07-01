@@ -19,16 +19,21 @@ then
 fi
 
 # Check that mailx application has been installed
-
 if ! which mailx > /dev/null 2> /dev/null 
 then
   echo "You need to run \"yum install mailx\" prior to running this shell script" >&2
   exit 1
 fi
 
-if ! virsh list | grep -iqs blofeld
+servername=concept
+serveraddress=172.21.5.100
+tld=ops
+sld=fastfood
+bld=restaurant
+
+if ! virsh list | grep -iqs $servername
 then
-  echo "You need to run your cloning-source \"blofeld\" VM" >&2
+  echo "You need to run your cloning-source \"$servername\" VM" >&2
   exit 2
 fi
 
@@ -64,7 +69,7 @@ do
 	esac
 done
 
-cat <<'PPC' > /tmp/checkblofeld.bash
+cat <<'PPC' > /tmp/check$servername.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -138,7 +143,7 @@ cat /root/bin/assnBackup.bash 2> /dev/null
 echo TPIRCSPUKCAB
 echo
 
-ping -c1 -q 172.19.1.100 > /dev/null 2>&1
+ping -c1 -q $serveraddress > /dev/null 2>&1
 echo PING:$? 
 
 echo CRON
@@ -160,35 +165,37 @@ echo incremental:`ls -1 /backup/incremental | grep -v 'vm' | wc -l`
 echo
 PPC
 
-address=172.19.1.100
-ssh $address 'bash ' < /tmp/checkblofeld.bash > /tmp/output-blofeld.txt 2>&1
-
+ssh $serveraddress 'bash ' < /tmp/check$servername.bash > /tmp/output-$servername.txt 2>&1
 bash /tmp/checkhost.bash > /tmp/output-host.txt 2>&1
 
 
 
 # Send report information to instructor
-
 cat > message.txt <<+
 If you have received this e-mail message, then
 you have successfully submitted the remaining
 information for your OPS335 assignment 1 (part 1)
-
 +
 
+mail -s "OPS335-a1p1-$fullName" -a /tmp/output-$servername.txt -a /tmp/output-host.txt $profemail < message.txt
+tries=0
+sent=0
+while [ $tries -lt 10 ]
+do
+        sent=`tail /var/log/maillog | grep -cE "to=<${profemail}>.*status=sent" 2>/dev/null`
+        if [ $sent -gt 0 ]
+        then
+                tries=10
+        else
+                tries=$[$tries+1]
+                sleep 10
+        fi
+done
 
-
-mail -s "OPS335-a1p1-$fullName" -a /tmp/output-blofeld.txt -a /tmp/output-host.txt $profemail < /dev/null
-mail -s "OPS335-a1p1-confirmation" "$userID@myseneca.ca"  < message.txt
-
-rm /tmp/output-blofeld.txt /tmp/checkblofeld.bash 2> /dev/null
-
-cat <<+
-
-Submission of OPS335 assignment 1 (part 1) completed.
-A confirmation message should have been sent to your
-Seneca email account. If you did NOT receive a confirmation
-message, please check that you install the mailx package
-or otherwise, contact your OPS335 instructor.
-
-+
+if [ $sent -gt 0 ]
+then
+	mail -s "OPS335-a1p1-confirmation" "$userID@myseneca.ca"  < message.txt
+	cat message.txt
+else
+	echo "The email was not sent.  This script must be run on campus, or Seneca's email servers will not accept the email.  If you are on campus try again in a few minutes or ask your professor for help." >&2
+fi

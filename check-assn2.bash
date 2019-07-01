@@ -4,7 +4,7 @@
 
 # Author: Murray Saul
 # Created: October 7, 2017 Updated: October 20, 2018
-# Edited by: Peter Callaghan February 12, 2019
+# Edited by: Peter Callaghan July 1, 2019
 
 # Purpose: To generate data to be mailed to OPS335 instructor in order
 #          to mark OPS335 assignment #2
@@ -26,10 +26,21 @@ then
   exit 1
 fi
 
+nameserver=wendys
+nameserveraddress=172.21.5.2
+mailtransferagent=subway
+mailtransferaddress=172.21.5.5
+mailsubmissionagent=arbys
+mailsubmissionaddress=172.21.5.6
+sambaserver=mcdonalds
+sambaaddress=172.21.5.8
+tld=ops
+sld=fastfood
+bld=restaurant
 
-if ! virsh list | egrep -iqs "(wint|carver|drax|zorin)"
+if ! virsh list | egrep -iqs "($nameserver|$mailtransferagent|$mailsubmissionagent|$sambaserver)"
 then
-  echo "You need to run your \"wint\", \"carver\", \"drax\", and \"zorin\" VMs" >&2
+  echo "You need to run your \"$nameserver\", \"$mailtransferagent\", \"$mailsubmissionagent\", and \"$sambaserver\" VMs" >&2
   exit 2
 fi
 
@@ -46,18 +57,10 @@ while [ $done -ne 0 ]
 do
 	read -p "Enter your section:" section
 	case $section in
-		a|A)	profemail="chris.johnson@senecacollege.ca"
+		a|A)	profemail="peter.callaghan@senecacollege.ca"
 			done=0
 			;;
-		b|B)
-			profemail="andres.lombo@senecacollege.ca"
-			done=0
-			;;
-		c|C)
-			profemail="peter.callaghan@senecacollege.ca"
-			done=0
-			;;
-		d|D)
+		b|B|c|C|d|d)
 			profemail="ahad.mammadov@senecacollege.ca"
 			done=0
 			;;
@@ -73,7 +76,7 @@ echo "Your Assignment #2 is being evaluated..."
 echo "This make take a few minutes to complete..."
 
 
-cat <<'PPC' > /tmp/checkcarver.bash
+cat <<'PPC' > /tmp/check$mailtransferagent.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -83,9 +86,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search bond\.villains\.ops" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -147,11 +150,11 @@ echo
 
 yum install -y bind-utils &> /dev/null
 echo MAILXCHANGE
-dig @172.19.1.2 MX bond.villains.ops. | grep -E "^[^;].*MX"
+dig @nameserveraddress MX $bld.$sld.$tld. | grep -E "^[^;].*MX"
 echo EGNAHCXLIAM
 PPC
 
-cat <<'PPC' > /tmp/checkdrax.bash
+cat <<'PPC' > /tmp/check$mailsubmissionagent.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -161,9 +164,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search bond\.villains\.ops" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -237,7 +240,7 @@ echo ALIASES
 echo root:`postalias -q root hash:/etc/aliases`
 PPC
 
-cat <<'PPC' > /tmp/checkzorin.bash
+cat <<'PPC' > /tmp/check$sambaserver.bash
 #!/bin/bash
 
 #Ensure the host name has been set correctly
@@ -247,9 +250,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?bond\.villains\.ops\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search bond\.villains\.ops" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -319,12 +322,9 @@ getsebool -a | grep samba
 echo sgnittESxuniLES
 PPC
 
-address=172.19.1.5
-ssh $address 'bash ' < /tmp/checkcarver.bash > /tmp/output-carver.txt 2>&1
-address=172.19.1.6
-ssh $address 'bash ' < /tmp/checkdrax.bash > /tmp/output-drax.txt 2>&1
-address=172.19.1.8
-ssh $address 'bash ' < /tmp/checkzorin.bash > /tmp/output-zorin.txt 2>&1
+ssh $mailtransferaddress 'bash ' < /tmp/check$mailtransferagent.bash > /tmp/output-$mailtransferagent.txt 2>&1
+ssh $mailsubmissionaddress 'bash ' < /tmp/check$mailsubmissionagent.bash > /tmp/output-$mailsubmissionagent.txt 2>&1
+ssh $sambaaddress 'bash ' < /tmp/check$sambaserver.bash > /tmp/output-$sambaserver.txt 2>&1
 
 # Send report information to instructor
 
@@ -335,7 +335,7 @@ information for your OPS335 assignment 2
 
 +
 
-mail -s "OPS335-a2-$fullName" -a /tmp/output-carver.txt -a /tmp/output-drax.txt -a /tmp/output-zorin.txt $profemail < message.txt
+mail -s "OPS335-a2-$fullName" -a /tmp/output-$mailtransferagent.txt -a /tmp/output-$mailsubmissionagent.txt -a /tmp/output-$sambaserver.txt $profemail < message.txt
 
 
 tries=0
@@ -355,19 +355,9 @@ done
 if [ $sent -gt 0 ]
 then
 	mail -s "OPS335-a2-confirmation" "$userID@myseneca.ca"  < message.txt
-cat <<+
-Submission of OPS335 assignment 2 completed.
-A confirmation message should have been sent to your
-Seneca email account.
-+
+	cat message.txt
 else
 	echo "The email was not sent.  This script must be run on campus, or Seneca's email servers will not accept the email.  If you are on campus try again in a few minutes or ask your professor for help." >&2
 fi
 
-rm -f  /tmp/checkcarver.bash /tmp/checkdrax.bash /tmp/checkzorin.bash /tmp/output-carver.txt /tmp/output-drax.txt /tmp/output-zorin.txt message.txt 2> /dev/null
-
-
-
-
-
-
+rm -f  /tmp/check$mailtransferagent.bash /tmp/check$mailsubmissionagent.bash /tmp/check$sambaserver.bash /tmp/output-$mailtransferagent.txt /tmp/output-$mailsubmissionagent.txt /tmp/output-$sambaserver.txt message.txt 2> /dev/null

@@ -4,7 +4,7 @@
 
 # Author: Murray Saul
 # Created: October 7, 2017 Updated: October 20, 2018
-# Edited by: Peter Callaghan July 1, 2019
+# Edited by: Peter Callaghan November 10, 2019
 
 # Purpose: To generate data to be mailed to OPS335 instructor in order
 #          to mark OPS335 assignment #2
@@ -26,17 +26,17 @@ then
   exit 1
 fi
 
-nameserver=wendys
-nameserveraddress=172.21.5.2
-mailtransferagent=subway
-mailtransferaddress=172.21.5.5
-mailsubmissionagent=arbys
-mailsubmissionaddress=172.21.5.6
-sambaserver=mcdonalds
-sambaaddress=172.21.5.8
+nameserver=australinea
+nameserveraddress=172.28.105.2
+mailtransferagent=asia
+mailtransferaddress=172.28.105.5
+mailsubmissionagent=europe
+mailsubmissionaddress=172.28.105.6
+sambaserver=southamerica
+sambaaddress=172.28.105.8
 tld=ops
-sld=fastfood
-bld=restaurant
+sld=earth
+bld=continents
 
 if ! virsh list | egrep -iqs "($nameserver|$mailtransferagent|$mailsubmissionagent|$sambaserver)"
 then
@@ -50,24 +50,6 @@ fi
 read -p "Please enter YOUR FULL NAME: " fullName
 
 read -p "Please enter YOUR SENECA LOGIN USERNAME: " userID
-
-profemail=""
-done=1
-while [ $done -ne 0 ]
-do
-	read -p "Enter your section:" section
-	case $section in
-		a|A)	profemail="peter.callaghan@senecacollege.ca"
-			done=0
-			;;
-		b|B|c|C|d|d)
-			profemail="ahad.mammadov@senecacollege.ca"
-			done=0
-			;;
-		*) echo "That is not a current section."
-			;;
-	esac
-done
 
 # Generate Evaluation Report
 
@@ -86,9 +68,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^[[:space:]]*DOMAIN=" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^^[[:space:]]*DOMAINNAME=" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^^[[:space:]]*search" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -150,7 +132,7 @@ echo
 
 yum install -y bind-utils &> /dev/null
 echo MAILXCHANGE
-dig @nameserveraddress MX $bld.$sld.$tld. | grep -E "^[^;].*MX"
+dig @172.28.105.2 MX continents.earth.ops. | grep -E "^[^;].*MX"
 echo EGNAHCXLIAM
 PPC
 
@@ -164,9 +146,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^[[:space:]]*DOMAIN=" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^^[[:space:]]*DOMAINNAME=" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^^[[:space:]]*search" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -250,9 +232,9 @@ echo
 echo "SELinux status:"`getenforce`
 echo
 
-echo "DOMAIN:"`grep -E "^DOMAIN=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network-scripts/ifcfg-*`
-echo "DOMAINNAME:"`grep -E "^DOMAINNAME=\"?$bld\.$sld\.$tld\"?$" /etc/sysconfig/network`
-echo "SEARCH:"`grep -E "^search $bld\.$sld\.$tld" /etc/resolv.conf`
+echo "DOMAIN:"`grep -E "^[[:space:]]*DOMAIN=" /etc/sysconfig/network-scripts/ifcfg-*`
+echo "DOMAINNAME:"`grep -E "^^[[:space:]]*DOMAINNAME=" /etc/sysconfig/network`
+echo "SEARCH:"`grep -E "^^[[:space:]]*search" /etc/resolv.conf`
 echo
 
 echo "IP ADDRESS"
@@ -320,44 +302,19 @@ echo
 echo SELinuxSEttings
 getsebool -a | grep samba
 echo sgnittESxuniLES
+echo
+
+echo SELinuxContexts
+ls -LZR /supercontinents
+echo stxetonCxuniLES
 PPC
 
 ssh $mailtransferaddress 'bash ' < /tmp/check$mailtransferagent.bash > /tmp/output-$mailtransferagent.txt 2>&1
 ssh $mailsubmissionaddress 'bash ' < /tmp/check$mailsubmissionagent.bash > /tmp/output-$mailsubmissionagent.txt 2>&1
 ssh $sambaaddress 'bash ' < /tmp/check$sambaserver.bash > /tmp/output-$sambaserver.txt 2>&1
 
-# Send report information to instructor
+tar -czf a2.$userID.tgz /tmp/output-$mailtransferagent.txt /tmp/output-$mailsubmissionagent.txt /tmp/output-$sambaserver.txt
 
-cat > message.txt <<+
-If you have received this e-mail message, then
-you have successfully submitted the remaining
-information for your OPS335 assignment 2
-
-+
-
-mail -s "OPS335-a2-$fullName" -a /tmp/output-$mailtransferagent.txt -a /tmp/output-$mailsubmissionagent.txt -a /tmp/output-$sambaserver.txt $profemail < message.txt
-
-
-tries=0
-sent=0
-while [ $tries -lt 10 ]
-do
-        sent=`tail /var/log/maillog | grep -cE "to=<${profemail}>.*status=sent" 2>/dev/null`
-        if [ $sent -gt 0 ]
-        then
-                tries=10
-        else
-                tries=$[$tries+1]
-                sleep 10
-        fi
-done
-
-if [ $sent -gt 0 ]
-then
-	mail -s "OPS335-a2-confirmation" "$userID@myseneca.ca"  < message.txt
-	cat message.txt
-else
-	echo "The email was not sent.  This script must be run on campus, or Seneca's email servers will not accept the email.  If you are on campus try again in a few minutes or ask your professor for help." >&2
-fi
-
-rm -f  /tmp/check$mailtransferagent.bash /tmp/check$mailsubmissionagent.bash /tmp/check$sambaserver.bash /tmp/output-$mailtransferagent.txt /tmp/output-$mailsubmissionagent.txt /tmp/output-$sambaserver.txt message.txt 2> /dev/null
+rm -f  /tmp/check$mailtransferagent.bash /tmp/check$mailsubmissionagent.bash /tmp/check$sambaserver.bash /tmp/output-$mailtransferagent.txt /tmp/output-$mailsubmissionagent.txt /tmp/output-$sambaserver.txt 2> /dev/null
+ 
+echo "The script created a file called a2.$userID.tgz in the current directory.  Upload that to blackboard for Assignment 2."

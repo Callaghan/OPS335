@@ -1,7 +1,7 @@
 #!/bin/bash
 #  OPS335 Lab 7 configuration check
 #  Written by: Peter Callaghan
-#  Last Modified: 04 Jul, '17
+#  Last Modified: 29 Nov, '19
 #  This script runs a series of commands to show the current configuration of the machine it is run on
 #  Run it on each of your machines, and attach the output from all of them to your lab submission.
 
@@ -37,52 +37,12 @@ do
 done
 
 
-#host only
-if [ "`hostname -s`" == "host" ]
+#VM4 only
+echo "LDAP Configuration"
+if [ "`hostname -s`" == "vm4" ]
 then
-	filesystem=`df | grep /var/lib/libvirt/images | cut -d' ' -f1`
-	uuid=`blkid $filesystem | sed -r 's/^.*UUID="([-a-zA-Z0-9]+)".*$/\1/'`
-	echo "UUID:$uuid"
-	echo
-	echo "firewall"
-	iptables -L -v -n
-	echo
-	echo "exportfs"
-	exportfs
-	echo
-	echo "/etc/sysconfig/network"
-	cat /etc/sysconfig/network
-	echo
-	echo "nisdomain:"`nisdomainname`
-	echo
-	echo "/var/yp/securenets"
-	cat /var/yp/securenets
-	echo
-	echo "nfs-server:"`systemctl is-active nfs-server.service`
-	echo "nfs-server:"`systemctl is-enabled nfs-server.service`
-	echo "ypserv:"`systemctl is-active ypserv.service`
-	echo "ypserv:"`systemctl is-enabled ypserv.service`
-	echo "rhel-domainname:"`systemctl is-active rhel-domainname.service`
-	echo "rhel-domainname:"`systemctl is-enabled rhel-domainname.service`
+	ldapsearch -x -b 'dc=andrew,dc=ops'
 else
-#vms only
-	filesystem=`df | grep -E "(centos-)?root" | cut -d' ' -f1`
-	echo "UUID:"`blkid $filesystem | sed -r 's/^.*UUID="([-a-zA-Z0-9]+)".*$/\1/'`
-	echo
-	echo "Configuration - nsswitch"
-	sed -e "/^#/ d" -e "/^$/ d" /etc/nsswitch.conf
-	echo
-	echo "Configuration - yp.conf"
-	sed -e "/^#/ d" -e "/^$/ d" /etc/yp.conf
-	echo
-	echo "ypbind:"`systemctl is-active ypbind.service`
-	echo "ypbind:"`systemctl is-enabled ypbind.service`
-	echo
-	echo Bound to:`ypwhich`
-	echo
-	echo "maps - passwd"
-	ypcat passwd
-	echo
-	echo "Mounts"
-	mount | grep /home
+#everyone else
+	authconfig --test
 fi

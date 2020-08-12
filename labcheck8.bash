@@ -49,7 +49,7 @@ then
 	echo
 
 	echo "Roundcube logs"
-	cat ${rounddir}/logs/sendmail
+	cat ${rounddir}/logs/sendmail.log
 	echo
 elif [ "`hostname -s`" == "vm2" ]
 then

@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/bash
 #  OPS335 Lab 0 configuration check
 #  Written by: Peter Callaghan
-#  Last Modified: 10 May. '18
+#  Last Modified: 01 Nov. '24
 #  This script runs a series of commands to show the current configuration of the machine it is run on
 #  Run it as root on each of your machines, and attach the output to the lab submission.
 
